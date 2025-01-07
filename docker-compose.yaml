@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: wp_password
+      WORDPRESS_DB_NAME: wp_database
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wordpress.rule=Host(`blog.tim-seeger.de`)"
+      - "traefik.http.services.wordpress.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-network"
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: wp_database
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: wp_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - traefik-network
+
+  react:
+    build:
+      context: ./frontend
+    container_name: react
+    environment:
+      - REACT_APP_BACKEND_URL=https://blog.tim-seeger.de/wp-json
+    ports:
+      - "3000:3000"
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.react.rule=Host(`frontend.tim-seeger.de`)"
+      - "traefik.http.services.react.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-network"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx.rule=Host(`assets.tim-seeger.de`)"
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-network"
+
+volumes:
+  wordpress_data:
+  mariadb_data:
+
+networks:
+  traefik-network:
+    external: true
+
