@@ -30,6 +30,8 @@ WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/.next ./.next
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
+COPY --from=builder /usr/src/app/*.js ./
+COPY --from=builder /usr/src/app/*.mjs ./
 
 # Expose the application port
 EXPOSE 3000
@@ -38,5 +40,5 @@ EXPOSE 3000
 ENV PATH /usr/src/app/node_modules/.bin:$PATH
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
 
